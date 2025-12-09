@@ -1,0 +1,61 @@
+# **기승형(Kishō-type) 성향 분석 앱 기획서**
+
+## **1\. 개요 (Concept)**
+
+**'기승형' 앱은 사용자의 MBTI 및 Big Five(OCEAN) 성향을 실시간으로 분석하고, 시간이 지남에 따라 성향이 변화하는 추이를 시 카드(Poem Card)와의 상호작용을 통해 추적하는 모바일 애플리케이션입니다.**
+
+**핵심 가치: 정적인 테스트 결과가 아닌, 일상의 감정적/취향적 반응을 기반으로 한 동적인 성향 분석 제공.**
+
+## **2\. 주요 기능 및 흐름**
+
+### **2.1. 사용자 흐름 (User Flow)**
+
+1. **앱 접속 및 자동 인증: 사용자 접속 시 Firebase Custom Token을 이용한 자동 인증 및 고유 userId 생성.**  
+2. **시 카드 스와이프: 사용자는 화면에 제시된 시 카드(Poem Card)를 보고, 공감하면 오른쪽(Right Swipe), 비공감하면 \*\*왼쪽(Left Swipe)\*\*으로 스와이프합니다. (reanimated 기반의 틴더 스타일 부드러운 애니메이션 구현)**  
+3. **점수 누적: 스와이프 결과는 Firebase Firestore에 사용자별로 실시간 누적됩니다.**  
+4. **분석 결과 확인:**  
+   * **MBTI: 4개 축(E/I, S/N, T/F, J/P)의 최종 선호도(%) 및 확정 타입 표시.**  
+   * **Big Five: 5개 요소(O, C, E, A, N)의 스펙트럼 점수(0\~100%) 표시.**  
+   * **Kishō Tag: MBTI 결과를 바탕으로 도출된 4가지 Kishō Tag (예: Inner-Harmony-Feeling-Flow) 표시.**
+
+### **2.2. 데이터 모델 (Poem Card Tagging)**
+
+**모든 시 카드는 성향 분석의 핵심이 되는 가중치(Impact Score)를 가집니다.**
+
+| 필드명 | 타입 | 예시 | 설명 |
+| :---- | :---- | :---- | :---- |
+| **card\_id** | **String** | **"P001"** | **고유 카드 식별자** |
+| **poem\_text** | **String** | **"고요한 새벽, 홀로..."** | **시 문구** |
+| **MBTI\_Impact** | **Object** | **{ "I": 0.8, "N": 0.5 }** | **MBTI 4개 축의 8개 극(E/I, S/N, T/F, J/P) 중 이 카드가 측정하는 극과 가중치(0.1\~1.0)** |
+| **BigFive\_Impact** | **Object** | **{ "O": 0.7, "N": \-0.4 }** | **Big Five 5개 요소(O, C, E, A, N)에 대한 가중치. 음수(-)는 해당 특성의 낮음을 유도함.** |
+
+## **3\. 기술 스택 (Technical Stack)**
+
+| 영역 | 기술 | 역할 및 특징 |
+| :---- | :---- | :---- |
+| **프론트엔드** | **React Native (TSX)** | **모바일 앱(iOS/Android) 개발을 위한 크로스 플랫폼 프레임워크.** |
+| **애니메이션/제스처** | **Expo, react-native-reanimated, react-native-gesture-handler** | **핵심: Reanimated를 통한 네이티브 드라이버 기반의 틴더 스타일 스와이프 애니메이션 구현 및 제스처 핸들링 최적화.** |
+| **상태 관리** | **Zustand** | **간결하고 효율적인 전역 상태 관리 (사용자 점수, 앱 설정, 현재 카드 인덱스 등).** |
+| **데이터 검증** | **Zod** | **Firestore 데이터 및 로컬 카드 데이터의 런타임 및 컴파일 타임 타입 검증을 통한 안정성 확보.** |
+| **데이터베이스** | **Firebase Firestore** | **사용자별 스와이프 기록, 누적 점수 및 최종 성향 결과를 실시간으로 저장 및 동기화.** |
+| **인증** | **Firebase Authentication** | **\_\_initial\_auth\_token을 사용한 자동/익명 인증 처리.** |
+| **API** | **Gemini API (Placeholder)** | **(향후 확장 시) Kishō Tag별 시 추천 또는 결과 분석 문구 생성에 활용.** |
+
+## **4\. 데이터 저장소 상세 (Firestore Schema)**
+
+### **4.1. 사용자 점수 문서 (Current Scores)**
+
+* **경로: /artifacts/{appId}/users/{userId}/scores/current\_scores**  
+* **저장 내용:**  
+  * **MBTI\_Total: { "E": 10.5, "I": 25.2, "S": 15.0, ... } (각 극의 누적 가중치 합)**  
+  * **BigFive\_Cumulative: { "O": 5.8, "C": \-2.1, "E": 12.0, ... } (각 요소의 누적 합계)**  
+  * **Response\_Count: 250 (총 스와이프 횟수)**  
+  * **Last\_Updated: Timestamp**
+
+### **4.2. 카드 목록 (Static Card Data)**
+
+* **경로: /artifacts/{appId}/public/data/cards/{cardId}**  
+* **저장 내용: 모든 시 카드(Poem Card)의 내용 및 태깅 정보 (poem\_text, MBTI\_Impact, BigFive\_Impact).**
+
+**\[이 문서는 Kishō-type 성향 분석 앱의 초기 개발 방향을 정의합니다.\]**
+
