@@ -1,17 +1,18 @@
+import type { PoemCard as PoemCardType, SwipeDirection } from '@/types';
+import { BlurView } from 'expo-blur';
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Dimensions } from 'react-native';
-import { GestureDetector, Gesture } from 'react-native-gesture-handler';
+import { Dimensions, StyleSheet, Text, View } from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
-  useSharedValue,
+  interpolate,
+  runOnJS,
+  useAnimatedReaction,
   useAnimatedStyle,
+  useDerivedValue,
+  useSharedValue,
   withSpring,
   withTiming,
-  runOnJS,
-  interpolate,
-  useDerivedValue,
-  useAnimatedReaction,
 } from 'react-native-reanimated';
-import type { PoemCard as PoemCardType, SwipeDirection } from '@/types';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const SWIPE_THRESHOLD = SCREEN_WIDTH * 0.3;
@@ -110,7 +111,7 @@ export const SwipeablePoemCard: React.FC<SwipeablePoemCardProps> = ({
   return (
     <GestureDetector gesture={panGesture}>
       <Animated.View style={[styles.cardContainer, cardStyle]}>
-        <View style={styles.card}>
+        <BlurView intensity={80} tint="dark" style={styles.card}>
           <Animated.View style={[styles.feedbackContainer, feedbackTextStyle]}>
             {feedbackText !== '' && (
               <Text style={[styles.feedbackText, { color: feedbackColor }]}>
@@ -122,7 +123,7 @@ export const SwipeablePoemCard: React.FC<SwipeablePoemCardProps> = ({
           <View style={styles.tagContainer}>
             <Text style={styles.tagText}>{card.Kisho_Tag}</Text>
           </View>
-        </View>
+        </BlurView>
       </Animated.View>
     </GestureDetector>
   );
@@ -139,18 +140,21 @@ const styles = StyleSheet.create({
   card: {
     width: '100%',
     aspectRatio: 0.7,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
     borderRadius: 20,
     padding: 24,
     justifyContent: 'space-between',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
       height: 4,
     },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 8,
+    overflow: 'hidden',
   },
   feedbackContainer: {
     position: 'absolute',
@@ -170,7 +174,7 @@ const styles = StyleSheet.create({
   poemText: {
     fontSize: 24,
     fontWeight: '700',
-    color: '#1A1A1A',
+    color: '#FFFFFF',
     lineHeight: 36,
     textAlign: 'center',
     flex: 1,
@@ -188,12 +192,12 @@ const styles = StyleSheet.create({
     marginTop: 16,
     paddingTop: 16,
     borderTopWidth: 1,
-    borderTopColor: '#E0E0E0',
+    borderTopColor: 'rgba(255, 255, 255, 0.2)',
   },
   tagText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#888888',
+    color: 'rgba(255, 255, 255, 0.8)',
     textAlign: 'center',
     textTransform: 'uppercase',
     letterSpacing: 1,

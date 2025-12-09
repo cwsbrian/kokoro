@@ -189,19 +189,18 @@ export default function HomeScreen() {
       source={{ uri: `https://picsum.photos/1080/1920?random=${Date.now()}` }}
       style={styles.container}
       resizeMode="cover">
+      <View style={styles.overlay} />
       <BlurView intensity={20} style={styles.blurOverlay}>
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerLeft}>
-            <Text style={styles.appTitle}>기승형</Text>
-            <Text style={styles.responseCount}>{responseCount}회</Text>
+            {/* <Text style={styles.appTitle}>Kokoro</Text> */}
+            <Text style={styles.responseCount}>
+              {responseCount > 20 ? responseCount : responseCount + '/20'} 회
+              </Text>
           </View>
           <View style={styles.headerRight}>
-            {userId && (
-              <Text style={styles.userId} numberOfLines={1} ellipsizeMode="middle">
-                {userId.slice(0, 8)}...
-              </Text>
-            )}
+
             <TouchableOpacity
               style={[styles.resultButton, !result.canShowResults && styles.resultButtonDisabled]}
               onPress={handleViewResults}
@@ -246,9 +245,13 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.0)',
+  },
   blurOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    // backgroundColor: 'rgba(0, 0, 0, 0.3)',
   },
   loadingContainer: {
     flex: 1,
@@ -329,8 +332,8 @@ const styles = StyleSheet.create({
   },
   responseCount: {
     fontSize: 14,
-    color: '#CCCCCC',
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    color: '#ffffff',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
@@ -352,7 +355,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   resultButtonDisabled: {
-    backgroundColor: '#666666',
+    backgroundColor: '#000',
     opacity: 0.5,
   },
   resultButtonText: {
