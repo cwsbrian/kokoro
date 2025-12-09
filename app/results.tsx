@@ -10,6 +10,7 @@ import {
 import { useRouter } from 'expo-router';
 import Svg, { Polygon, Circle, Line, Text as SvgText } from 'react-native-svg';
 import { useAppStore } from '@/store/useAppStore';
+import { MRT } from '@/utils/scoreCalculator';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CHART_SIZE = Math.min(SCREEN_WIDTH - 40, 300);
@@ -23,7 +24,7 @@ export default function ResultsScreen() {
     return (
       <View style={styles.container}>
         <Text style={styles.errorText}>
-          결과를 보려면 최소 200회 이상 스와이프해야 합니다.
+          결과를 보려면 최소 {MRT}회 이상 스와이프해야 합니다.
         </Text>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Text style={styles.backButtonText}>돌아가기</Text>

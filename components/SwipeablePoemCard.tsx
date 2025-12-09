@@ -50,14 +50,12 @@ export const SwipeablePoemCard: React.FC<SwipeablePoemCardProps> = ({
       if (absX > SWIPE_THRESHOLD || absY > SWIPE_THRESHOLD) {
         const direction: SwipeDirection = event.translationX > 0 ? 'right' : 'left';
         
-        // 카드를 화면 밖으로 이동
+        // 즉시 콜백 호출 (상태 업데이트는 지연 없이 실행)
+        runOnJS(onSwipe)(direction);
+        
+        // 카드를 화면 밖으로 이동 (애니메이션은 백그라운드에서 실행)
         const finalX = event.translationX > 0 ? SCREEN_WIDTH + 100 : -SCREEN_WIDTH - 100;
-        translateX.value = withSpring(finalX, { damping: 15 }, (finished) => {
-          if (finished) {
-            // 애니메이션이 완료된 후에만 콜백 호출
-            runOnJS(onSwipe)(direction);
-          }
-        });
+        translateX.value = withSpring(finalX, { damping: 15 });
         translateY.value = withSpring(event.translationY * 2, { damping: 15 });
         opacity.value = withTiming(0, { duration: 200 });
       } else {

@@ -1,13 +1,13 @@
 import type {
-  PoemCard,
-  MBTI_Total,
-  BigFive_Cumulative,
-  MBTIPreference,
-  MBTITypeResult,
-  BigFiveSpectrum,
-  KishoTypeResult,
-  AnalysisResult,
-  SwipeDirection,
+    AnalysisResult,
+    BigFive_Cumulative,
+    BigFiveSpectrum,
+    KishoTypeResult,
+    MBTI_Total,
+    MBTIPreference,
+    MBTITypeResult,
+    PoemCard,
+    SwipeDirection,
 } from '@/types';
 
 // MBTI 반대 극 매핑
@@ -23,7 +23,7 @@ const MBTI_OPPOSITES: Record<string, string> = {
 };
 
 // MRT (Minimum Response Threshold)
-const MRT = 200;
+export const MRT = 20;
 
 /**
  * MBTI 점수 업데이트

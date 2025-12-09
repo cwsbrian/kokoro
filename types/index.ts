@@ -92,6 +92,6 @@ export interface AnalysisResult {
   mbti: MBTITypeResult;
   bigFive: BigFiveSpectrum;
   kisho: KishoTypeResult;
-  canShowResults: boolean; // MRT >= 200
+  canShowResults: boolean; // MRT >= 20
 }
 

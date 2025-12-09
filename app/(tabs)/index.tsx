@@ -3,6 +3,7 @@ import { loadPoemsFromJSON } from '@/data/poemsLoader';
 import { authenticateUser } from '@/services/authService';
 import { createUserDocument, getUserScores, updateUserScores } from '@/services/firestoreService';
 import { useAppStore } from '@/store/useAppStore';
+import { MRT } from '@/utils/scoreCalculator';
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
@@ -127,7 +128,7 @@ export default function HomeScreen() {
       router.push('/results');
     } else {
       // MRT 미달 시 알림
-      alert(`결과를 보려면 최소 ${200 - responseCount}번 더 스와이프해주세요.`);
+      alert(`결과를 보려면 최소 ${MRT - responseCount}번 더 스와이프해주세요.`);
     }
   };
 
