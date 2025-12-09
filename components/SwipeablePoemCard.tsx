@@ -119,7 +119,6 @@ export const SwipeablePoemCard: React.FC<SwipeablePoemCardProps> = ({
             )}
           </Animated.View>
           <Text style={styles.poemText}>{card.Poem_Text_KR}</Text>
-          <Text style={styles.poemTextJP}>{card.Poem_Text_JP}</Text>
           <View style={styles.tagContainer}>
             <Text style={styles.tagText}>{card.Kisho_Tag}</Text>
           </View>
