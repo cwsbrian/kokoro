@@ -7,9 +7,10 @@ import { MRT } from '@/utils/scoreCalculator';
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Image,
   ImageBackground,
   StyleSheet,
   Text,
@@ -17,10 +18,16 @@ import {
   View,
 } from 'react-native';
 
+// 이미지 URL 생성 함수 (카드 인덱스 기반)
+const getImageUrl = (index: number) => {
+  return `https://picsum.photos/1080/1920?random=${index}`;
+};
+
 export default function HomeScreen() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const preloadedImagesRef = useRef<Set<number>>(new Set());
 
   const {
     poems,
@@ -50,6 +57,33 @@ export default function HomeScreen() {
       saveScoresToFirestore();
     }
   }, [responseCount, mbtiTotal, bigFiveCumulative]);
+
+  // 이미지 프리로딩 함수
+  const preloadImages = async (startIndex: number, count: number = 3) => {
+    for (let i = 1; i <= count; i++) {
+      const targetIndex = startIndex + i;
+      // poems 배열 범위를 벗어나지 않고, 아직 프리로드하지 않은 이미지만 로드
+      if (targetIndex < poems.length && !preloadedImagesRef.current.has(targetIndex)) {
+        try {
+          const imageUrl = getImageUrl(targetIndex);
+          await Image.prefetch(imageUrl);
+          preloadedImagesRef.current.add(targetIndex);
+          if (__DEV__) {
+            console.log(`Preloaded image for index ${targetIndex}`);
+          }
+        } catch (error) {
+          console.warn(`Failed to preload image for index ${targetIndex}:`, error);
+        }
+      }
+    }
+  };
+
+  // currentCardIndex 변경 시 다음 이미지들 프리로드
+  useEffect(() => {
+    if (poems.length > 0 && currentCardIndex >= 0) {
+      preloadImages(currentCardIndex, 3);
+    }
+  }, [currentCardIndex, poems.length]);
 
   const initializeApp = async () => {
     try {
@@ -184,9 +218,12 @@ export default function HomeScreen() {
     );
   }
 
+  // 현재 카드 인덱스 기반 안정적인 이미지 URL
+  const currentImageUrl = getImageUrl(currentCardIndex);
+
   return (
     <ImageBackground
-      source={{ uri: `https://picsum.photos/1080/1920?random=${Date.now()}` }}
+      source={{ uri: currentImageUrl }}
       style={styles.container}
       resizeMode="cover">
       <View style={styles.overlay} />
@@ -212,19 +249,6 @@ export default function HomeScreen() {
 
         {/* Card Stack */}
         <View style={styles.cardStack}>
-          {/* 다음 카드들 (뒤에 보이는 카드들) */}
-          {hasMoreCards && poems[currentCardIndex + 1] && (
-            <View style={styles.nextCardContainer}>
-              <SwipeablePoemCard
-                key={`next-${currentCardIndex + 1}`}
-                card={poems[currentCardIndex + 1]}
-                index={currentCardIndex + 1}
-                onSwipe={() => {}}
-                isActive={false}
-              />
-            </View>
-          )}
-
           {/* 현재 카드 */}
           {currentCard && (
             <SwipeablePoemCard
