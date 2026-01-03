@@ -1,19 +1,77 @@
-import React from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Dimensions,
-} from 'react-native';
-import { useRouter } from 'expo-router';
-import Svg, { Polygon, Circle, Line, Text as SvgText } from 'react-native-svg';
 import { useAppStore } from '@/store/useAppStore';
 import { MRT } from '@/utils/scoreCalculator';
+import { useRouter } from 'expo-router';
+import React from 'react';
+import {
+  Dimensions,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import Svg, { Line, Polygon, Text as SvgText } from 'react-native-svg';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CHART_SIZE = Math.min(SCREEN_WIDTH - 40, 300);
+
+// 기승형 타입 조합 설명 함수
+function getTypeCombinationDescription(fullType: string): string {
+  const [ki, sho, ten, ketsu] = fullType.split('-');
+  
+  const descriptions: Record<string, string> = {
+    'Outer-Harmony-Feeling-Fixed': 
+      '외향적이면서도 조화로운 관계를 중시하며, 감정과 가치를 바탕으로 체계적으로 행동하는 유형입니다. 타인과의 협력을 통해 목표를 달성하며, 계획적이고 안정적인 환경에서 최고의 성과를 냅니다. 팀워크와 공감 능력이 뛰어나며, 구조화된 환경에서 사람들과 함께 성장하는 것을 선호합니다.',
+    
+    'Outer-Harmony-Feeling-Flow':
+      '외향적이고 조화로운 관계를 중시하며, 감정과 가치를 바탕으로 유연하게 행동하는 유형입니다. 타인과의 협력을 즐기며, 변화하는 상황에 쉽게 적응합니다. 새로운 경험과 가능성을 열어두고, 사람들과 함께하는 과정에서 창의력을 발휘합니다.',
+    
+    'Outer-Harmony-Logic-Fixed':
+      '외향적이면서도 조화로운 관계를 중시하며, 논리와 객관성을 바탕으로 체계적으로 행동하는 유형입니다. 효율적인 협업과 체계적인 계획을 통해 목표를 달성하며, 구조화된 환경에서 최고의 성과를 냅니다.',
+    
+    'Outer-Harmony-Logic-Flow':
+      '외향적이고 조화로운 관계를 중시하며, 논리와 객관성을 바탕으로 유연하게 행동하는 유형입니다. 타인과의 협력을 통해 문제를 해결하며, 변화하는 상황에 논리적으로 대응합니다.',
+    
+    'Outer-Solitude-Feeling-Fixed':
+      '외향적이지만 독립적인 활동을 선호하며, 감정과 가치를 바탕으로 체계적으로 행동하는 유형입니다. 자신만의 방식으로 목표를 달성하며, 계획적이고 안정적인 환경에서 최고의 성과를 냅니다.',
+    
+    'Outer-Solitude-Feeling-Flow':
+      '외향적이지만 독립적인 활동을 선호하며, 감정과 가치를 바탕으로 유연하게 행동하는 유형입니다. 새로운 경험을 추구하면서도 자신만의 가치를 중요하게 여기며, 변화하는 상황에 쉽게 적응합니다.',
+    
+    'Outer-Solitude-Logic-Fixed':
+      '외향적이지만 독립적인 활동을 선호하며, 논리와 객관성을 바탕으로 체계적으로 행동하는 유형입니다. 효율성과 객관성을 중시하며, 구조화된 환경에서 자신만의 방식으로 목표를 달성합니다.',
+    
+    'Outer-Solitude-Logic-Flow':
+      '외향적이지만 독립적인 활동을 선호하며, 논리와 객관성을 바탕으로 유연하게 행동하는 유형입니다. 객관적인 분석을 통해 문제를 해결하며, 변화하는 상황에 논리적으로 대응합니다.',
+    
+    'Inner-Harmony-Feeling-Fixed':
+      '내향적이면서도 조화로운 관계를 중시하며, 감정과 가치를 바탕으로 체계적으로 행동하는 유형입니다. 깊이 있는 관계를 형성하며, 계획적이고 안정적인 환경에서 최고의 성과를 냅니다. 타인과의 조화를 중시하면서도 자신만의 공간과 시간을 필요로 합니다.',
+    
+    'Inner-Harmony-Feeling-Flow':
+      '내향적이면서도 조화로운 관계를 중시하며, 감정과 가치를 바탕으로 유연하게 행동하는 유형입니다. 깊이 있는 관계를 형성하며, 변화하는 상황에 감정적으로 대응합니다. 타인과의 조화를 중시하면서도 유연한 환경을 선호합니다.',
+    
+    'Inner-Harmony-Logic-Fixed':
+      '내향적이면서도 조화로운 관계를 중시하며, 논리와 객관성을 바탕으로 체계적으로 행동하는 유형입니다. 깊이 있는 사고와 체계적인 계획을 통해 목표를 달성하며, 구조화된 환경에서 최고의 성과를 냅니다.',
+    
+    'Inner-Harmony-Logic-Flow':
+      '내향적이면서도 조화로운 관계를 중시하며, 논리와 객관성을 바탕으로 유연하게 행동하는 유형입니다. 깊이 있는 사고를 통해 문제를 해결하며, 변화하는 상황에 논리적으로 대응합니다.',
+    
+    'Inner-Solitude-Feeling-Fixed':
+      '내향적이고 독립적인 활동을 선호하며, 감정과 가치를 바탕으로 체계적으로 행동하는 유형입니다. 자신만의 가치와 감정을 중요하게 여기며, 계획적이고 안정적인 환경에서 최고의 성과를 냅니다. 깊이 있는 사고와 내적 성찰을 통해 성장합니다.',
+    
+    'Inner-Solitude-Feeling-Flow':
+      '내향적이고 독립적인 활동을 선호하며, 감정과 가치를 바탕으로 유연하게 행동하는 유형입니다. 자신만의 가치와 감정을 중요하게 여기며, 변화하는 상황에 감정적으로 대응합니다. 깊이 있는 사고와 내적 성찰을 통해 성장하며, 유연한 환경을 선호합니다.',
+    
+    'Inner-Solitude-Logic-Fixed':
+      '내향적이고 독립적인 활동을 선호하며, 논리와 객관성을 바탕으로 체계적으로 행동하는 유형입니다. 깊이 있는 사고와 논리적 분석을 통해 목표를 달성하며, 구조화된 환경에서 최고의 성과를 냅니다. 독립적이고 체계적인 접근을 통해 문제를 해결합니다.',
+    
+    'Inner-Solitude-Logic-Flow':
+      '내향적이고 독립적인 활동을 선호하며, 논리와 객관성을 바탕으로 유연하게 행동하는 유형입니다. 깊이 있는 사고와 논리적 분석을 통해 문제를 해결하며, 변화하는 상황에 논리적으로 대응합니다. 독립적이고 유연한 접근을 통해 성장합니다.',
+  };
+  
+  return descriptions[fullType] || 
+    `${ki}-${sho}-${ten}-${ketsu} 타입은 각 구성 요소의 조합으로 형성된 독특한 성향을 나타냅니다. 위의 각 축 설명을 참고하여 자신의 성향을 이해하시기 바랍니다.`;
+}
 
 export default function ResultsScreen() {
   const router = useRouter();
@@ -91,6 +149,52 @@ export default function ResultsScreen() {
           독특한 조합입니다. MBTI 타입 {result.mbti.type}과 Big Five 점수를 기반으로
           분석되었습니다.
         </Text>
+        
+        <View style={styles.kishoExplanation}>
+          <Text style={styles.explanationTitle}>기승형 구성 요소</Text>
+          <View style={styles.axisExplanation}>
+            <Text style={styles.axisTitle}>• Ki (起): {result.kisho.Ki}</Text>
+            <Text style={styles.axisDescription}>
+              {result.kisho.Ki === 'Inner' 
+                ? '내향적 성향으로, 내부 세계와의 깊은 연결을 중시합니다. 혼자만의 시간을 통해 에너지를 충전하며, 깊이 있는 사고와 내적 성찰을 선호합니다.'
+                : '외향적 성향으로, 외부 세계와의 활발한 상호작용을 즐깁니다. 사람들과의 교류를 통해 에너지를 얻으며, 다양한 경험과 활동을 추구합니다.'}
+            </Text>
+          </View>
+          
+          <View style={styles.axisExplanation}>
+            <Text style={styles.axisTitle}>• Shō (承): {result.kisho.Shō}</Text>
+            <Text style={styles.axisDescription}>
+              {result.kisho.Shō === 'Harmony' 
+                ? '조화를 중시하는 성향으로, 타인과의 관계와 협력을 중요하게 생각합니다. 갈등을 피하고 집단의 화합을 추구하며, 공감 능력이 뛰어납니다.'
+                : '고독을 선호하는 성향으로, 독립적인 활동과 개인적 공간을 중시합니다. 타인에 의존하기보다 스스로의 판단과 결정을 신뢰하며, 깊이 있는 집중을 선호합니다.'}
+            </Text>
+          </View>
+          
+          <View style={styles.axisExplanation}>
+            <Text style={styles.axisTitle}>• Ten (轉): {result.kisho.Ten}</Text>
+            <Text style={styles.axisDescription}>
+              {result.kisho.Ten === 'Feeling' 
+                ? '감정과 가치를 중시하는 성향으로, 사람 중심의 판단을 합니다. 인간관계와 감정적 만족을 중요하게 여기며, 공감과 배려를 통해 결정을 내립니다.'
+                : '논리와 객관성을 중시하는 성향으로, 사실과 원칙에 기반한 판단을 합니다. 효율성과 공정성을 추구하며, 감정보다는 논리적 분석을 통해 결정을 내립니다.'}
+            </Text>
+          </View>
+          
+          <View style={styles.axisExplanation}>
+            <Text style={styles.axisTitle}>• Ketsu (結): {result.kisho.Ketsu}</Text>
+            <Text style={styles.axisDescription}>
+              {result.kisho.Ketsu === 'Flow' 
+                ? '유연하고 개방적인 성향으로, 변화와 새로운 가능성을 환영합니다. 계획보다는 상황에 맞춰 유연하게 대응하며, 자유로운 환경에서 창의력을 발휘합니다.'
+                : '체계적이고 계획적인 성향으로, 구조와 질서를 중시합니다. 명확한 목표와 계획을 세우고, 체계적으로 실행하는 것을 선호하며, 안정성과 예측 가능성을 추구합니다.'}
+            </Text>
+          </View>
+        </View>
+        
+        <View style={styles.typeCombination}>
+          <Text style={styles.combinationTitle}>전체 타입 해석</Text>
+          <Text style={styles.combinationDescription}>
+            {getTypeCombinationDescription(result.kisho.fullType)}
+          </Text>
+        </View>
       </View>
 
       {/* Back Button */}
@@ -369,6 +473,50 @@ const styles = StyleSheet.create({
     color: '#666666',
   },
   interpretationText: {
+    fontSize: 14,
+    color: '#666666',
+    lineHeight: 22,
+    marginBottom: 20,
+  },
+  kishoExplanation: {
+    marginTop: 16,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#E0E0E0',
+  },
+  explanationTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333333',
+    marginBottom: 16,
+  },
+  axisExplanation: {
+    marginBottom: 16,
+  },
+  axisTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#4CAF50',
+    marginBottom: 6,
+  },
+  axisDescription: {
+    fontSize: 13,
+    color: '#666666',
+    lineHeight: 20,
+  },
+  typeCombination: {
+    marginTop: 16,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#E0E0E0',
+  },
+  combinationTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333333',
+    marginBottom: 12,
+  },
+  combinationDescription: {
     fontSize: 14,
     color: '#666666',
     lineHeight: 22,

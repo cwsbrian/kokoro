@@ -7,7 +7,7 @@ import { MRT } from '@/utils/scoreCalculator';
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Image,
@@ -59,7 +59,7 @@ export default function HomeScreen() {
   }, [responseCount, mbtiTotal, bigFiveCumulative]);
 
   // 이미지 프리로딩 함수
-  const preloadImages = async (startIndex: number, count: number = 3) => {
+  const preloadImages = useCallback(async (startIndex: number, count: number = 3) => {
     for (let i = 1; i <= count; i++) {
       const targetIndex = startIndex + i;
       // poems 배열 범위를 벗어나지 않고, 아직 프리로드하지 않은 이미지만 로드
@@ -76,14 +76,14 @@ export default function HomeScreen() {
         }
       }
     }
-  };
+  }, [poems.length]);
 
   // currentCardIndex 변경 시 다음 이미지들 프리로드
   useEffect(() => {
     if (poems.length > 0 && currentCardIndex >= 0) {
-      preloadImages(currentCardIndex, 3);
+      preloadImages(currentCardIndex, 5);
     }
-  }, [currentCardIndex, poems.length]);
+  }, [currentCardIndex, poems.length, preloadImages]);
 
   const initializeApp = async () => {
     try {
@@ -268,6 +268,7 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor:'#000000'
   },
   overlay: {
     ...StyleSheet.absoluteFillObject,
