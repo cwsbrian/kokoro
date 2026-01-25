@@ -32,7 +32,7 @@ export async function authenticateUser(
         },
       });
       throw new Error(
-        `Firebase Auth configuration not found. Please check:\n1. Firebase Console > Project Settings > General > Your apps > Web app exists\n2. EXPO_PUBLIC_FIREBASE_APP_ID is set in .env file\n3. Restart Expo server after setting environment variables`
+        `Firebase Auth configuration not found. This usually means:\n1. Anonymous Authentication is not enabled in Firebase Console\n   → Go to Firebase Console > Authentication > Sign-in method > Enable "Anonymous"\n2. The Web app doesn't exist in Firebase Console\n   → Go to Firebase Console > Project Settings > General > Add Web app\n3. EXPO_PUBLIC_FIREBASE_APP_ID is incorrect\n   → Check .env file and restart Expo server`
       );
     }
     console.error('Authentication error:', error);

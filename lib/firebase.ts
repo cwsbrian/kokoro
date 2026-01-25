@@ -80,43 +80,34 @@ export function getFirestoreInstance(): Firestore {
 }
 
 // Auth 인스턴스 (AsyncStorage를 사용한 영구 저장)
+// Firebase v12 + Expo SDK 54에서는 getAuth를 직접 사용하는 것이 더 안정적입니다
 export function getAuthInstance(): Auth {
   if (!auth) {
     const firebaseApp = getFirebaseApp();
     
-    // 먼저 initializeAuth를 시도 (AsyncStorage와 함께)
+    // Firebase v12 + Expo에서는 getAuth를 직접 사용하는 것이 더 안정적
+    // initializeAuth는 이미 초기화된 경우 에러를 발생시킬 수 있음
     try {
-      if (getReactNativePersistence) {
-        // getReactNativePersistence를 사용하여 AsyncStorage와 함께 초기화
-        auth = initializeAuth(firebaseApp, {
-          persistence: getReactNativePersistence(AsyncStorage),
-        });
-        console.log('Firebase Auth initialized with AsyncStorage persistence');
-      } else {
-        // getReactNativePersistence가 없는 경우 기본 초기화
-        // Firebase Web SDK v12는 React Native에서 자동으로 적절한 persistence를 사용함
-        auth = initializeAuth(firebaseApp);
-        console.log('Firebase Auth initialized with default persistence');
-      }
-    } catch (initError: any) {
-      // 이미 초기화된 경우 getAuth 사용
-      if (initError?.code === 'auth/already-initialized') {
-        try {
-          auth = getAuth(firebaseApp);
-          console.log('Firebase Auth already initialized, using existing instance');
-        } catch (getAuthError: any) {
-          console.error('Error getting existing Auth instance:', getAuthError);
-          throw getAuthError;
+      // 먼저 getAuth를 시도 (이미 초기화되었을 수 있음)
+      auth = getAuth(firebaseApp);
+      console.log('Firebase Auth initialized with getAuth');
+    } catch (getAuthError: any) {
+      // getAuth가 실패하면 initializeAuth 시도
+      try {
+        if (getReactNativePersistence) {
+          // getReactNativePersistence를 사용하여 AsyncStorage와 함께 초기화
+          auth = initializeAuth(firebaseApp, {
+            persistence: getReactNativePersistence(AsyncStorage),
+          });
+          console.log('Firebase Auth initialized with AsyncStorage persistence');
+        } else {
+          // getReactNativePersistence가 없는 경우 기본 초기화
+          auth = initializeAuth(firebaseApp);
+          console.log('Firebase Auth initialized with default persistence');
         }
-      } else {
+      } catch (initError: any) {
         console.error('Error initializing Firebase Auth:', initError);
-        // 마지막 시도: getAuth 사용
-        try {
-          auth = getAuth(firebaseApp);
-        } catch (finalError: any) {
-          console.error('Final error getting Auth:', finalError);
-          throw initError; // 원래 에러를 throw
-        }
+        throw initError;
       }
     }
   }
