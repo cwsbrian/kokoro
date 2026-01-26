@@ -1,6 +1,6 @@
 import { SwipeablePoemCard } from '@/components/SwipeablePoemCard';
 import { loadPoemsFromJSON } from '@/data/poemsLoader';
-import { authenticateUser } from '@/services/authService';
+import { getCurrentUser } from '@/services/authService';
 import { createUserDocument, getUserScores, updateUserScores } from '@/services/firestoreService';
 import { useAppStore } from '@/store/useAppStore';
 import { MRT } from '@/utils/scoreCalculator';
@@ -90,18 +90,10 @@ export default function HomeScreen() {
       setIsLoading(true);
       setError(null);
 
-      // 1. Firebase 인증
-      let user;
-      try {
-        user = await authenticateUser();
+      // 1. 현재 인증된 사용자 확인
+      const user = getCurrentUser();
+      if (user) {
         setUserId(user.uid);
-      } catch (authError: any) {
-        console.error('Firebase Auth error:', authError);
-        // Auth 실패 시 임시 사용자 ID 생성 (로컬 테스트용)
-        const tempUserId = `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        setUserId(tempUserId);
-        console.warn('Using temporary user ID for local testing:', tempUserId);
-        // Auth 없이도 앱 사용 가능하도록 계속 진행
       }
 
       // 2. 시 카드 로드
@@ -109,7 +101,7 @@ export default function HomeScreen() {
       loadPoems(loadedPoems);
       shufflePoems();
 
-      // 3. 기존 점수 불러오기 (Auth가 성공한 경우에만)
+      // 3. 기존 점수 불러오기 (인증된 사용자인 경우에만)
       if (user) {
         try {
           const existingScores = await getUserScores(user.uid);

@@ -1,5 +1,18 @@
 import { getAuthInstance } from '@/lib/firebase';
-import { signInWithCustomToken, signInAnonymously, User } from 'firebase/auth';
+import * as AuthSession from 'expo-auth-session';
+import * as WebBrowser from 'expo-web-browser';
+import {
+  createUserWithEmailAndPassword,
+  onAuthStateChanged as firebaseOnAuthStateChanged,
+  signInWithEmailAndPassword as firebaseSignInWithEmailAndPassword,
+  signOut as firebaseSignOut,
+  GoogleAuthProvider,
+  signInAnonymously,
+  signInWithCredential,
+  signInWithCustomToken,
+  Unsubscribe,
+  User,
+} from 'firebase/auth';
 
 /**
  * __initial_auth_token을 사용한 자동 인증
@@ -55,4 +68,111 @@ export function getCurrentUser(): User | null {
   const auth = getAuthInstance();
   return auth.currentUser;
 }
+
+/**
+ * 이메일/비밀번호로 로그인
+ */
+export async function signInWithEmailAndPassword(
+  email: string,
+  password: string
+): Promise<User> {
+  try {
+    const auth = getAuthInstance();
+    const userCredential = await firebaseSignInWithEmailAndPassword(auth, email, password);
+    return userCredential.user;
+  } catch (error: any) {
+    console.error('Email sign in error:', error);
+    throw error;
+  }
+}
+
+/**
+ * 이메일/비밀번호로 회원가입
+ */
+export async function signUpWithEmailAndPassword(
+  email: string,
+  password: string
+): Promise<User> {
+  try {
+    const auth = getAuthInstance();
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    return userCredential.user;
+  } catch (error: any) {
+    console.error('Email sign up error:', error);
+    throw error;
+  }
+}
+
+/**
+ * Google 로그인
+ */
+export async function signInWithGoogle(): Promise<User> {
+  try {
+    const auth = getAuthInstance();
+    
+    // Google OAuth 설정
+    const discovery = {
+      authorizationEndpoint: 'https://accounts.google.com/o/oauth2/v2/auth',
+      tokenEndpoint: 'https://oauth2.googleapis.com/token',
+      revocationEndpoint: 'https://oauth2.googleapis.com/revoke',
+    };
+
+    const request = new AuthSession.AuthRequest({
+      clientId: process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID || '',
+      scopes: ['openid', 'profile', 'email'],
+      responseType: AuthSession.ResponseType.IdToken,
+      redirectUri: AuthSession.makeRedirectUri({
+        scheme: 'kokoro',
+        path: 'auth',
+      }),
+    });
+
+    // OAuth 플로우 시작
+    const result = await request.promptAsync(discovery);
+
+    if (result.type === 'success') {
+      const { id_token } = result.params;
+      
+      if (!id_token) {
+        throw new Error('No ID token received from Google');
+      }
+
+      // Firebase에 Google 인증 정보로 로그인
+      const credential = GoogleAuthProvider.credential(id_token);
+      const userCredential = await signInWithCredential(auth, credential);
+      return userCredential.user;
+    } else {
+      throw new Error('Google sign in was cancelled or failed');
+    }
+  } catch (error: any) {
+    console.error('Google sign in error:', error);
+    throw error;
+  }
+}
+
+/**
+ * 로그아웃
+ */
+export async function signOut(): Promise<void> {
+  try {
+    const auth = getAuthInstance();
+    await firebaseSignOut(auth);
+  } catch (error: any) {
+    console.error('Sign out error:', error);
+    throw error;
+  }
+}
+
+/**
+ * 인증 상태 변경 리스너
+ */
+export function onAuthStateChanged(
+  callback: (user: User | null) => void
+): Unsubscribe {
+  const auth = getAuthInstance();
+  return firebaseOnAuthStateChanged(auth, callback);
+}
+
+// WebBrowser를 완료 처리
+WebBrowser.maybeCompleteAuthSession();
 

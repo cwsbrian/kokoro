@@ -11,10 +11,23 @@ import type { UserScores, MBTI_Total, BigFive_Cumulative } from '@/types';
 import { UserScoresSchema, FirestoreUserScoresSchema } from '@/schemas/poemSchema';
 
 /**
+ * 사용자 프로필 타입
+ */
+export interface UserProfile {
+  name: string;
+  email: string;
+  createdAt: Date | Timestamp;
+}
+
+/**
  * Firestore 경로 헬퍼
  */
 function getUserScoresPath(userId: string): string {
   return `artifacts/${APP_ID}/users/${userId}/scores/current_scores`;
+}
+
+function getUserProfilePath(userId: string): string {
+  return `artifacts/${APP_ID}/users/${userId}/profile`;
 }
 
 /**
@@ -124,6 +137,58 @@ export async function createUserDocument(userId: string): Promise<void> {
     });
   } catch (error) {
     console.error('Error creating user document:', error);
+    throw error;
+  }
+}
+
+/**
+ * 사용자 프로필 생성
+ */
+export async function createUserProfile(
+  userId: string,
+  profile: UserProfile
+): Promise<void> {
+  try {
+    const db = getFirestoreInstance();
+    const docRef = doc(db, getUserProfilePath(userId));
+
+    await setDoc(docRef, {
+      name: profile.name,
+      email: profile.email,
+      createdAt: serverTimestamp(),
+    });
+  } catch (error) {
+    console.error('Error creating user profile:', error);
+    throw error;
+  }
+}
+
+/**
+ * 사용자 프로필 조회
+ */
+export async function getUserProfile(userId: string): Promise<UserProfile | null> {
+  try {
+    const db = getFirestoreInstance();
+    const docRef = doc(db, getUserProfilePath(userId));
+    const docSnap = await getDoc(docRef);
+
+    if (!docSnap.exists()) {
+      return null;
+    }
+
+    const data = docSnap.data();
+    const createdAt =
+      data.createdAt instanceof Timestamp
+        ? data.createdAt.toDate()
+        : data.createdAt;
+
+    return {
+      name: data.name,
+      email: data.email,
+      createdAt,
+    };
+  } catch (error) {
+    console.error('Error getting user profile:', error);
     throw error;
   }
 }
