@@ -12,7 +12,7 @@ import {
   Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { signUpWithEmailAndPassword } from '@/services/authService';
+import { signUpWithEmailAndPassword, signInWithGoogle } from '@/services/authService';
 import { createUserProfile } from '@/services/firestoreService';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Colors } from '@/constants/theme';
@@ -105,6 +105,30 @@ export default function SignUpScreen() {
         errorMessage = '올바른 이메일 형식이 아닙니다.';
       } else if (error?.code === 'auth/weak-password') {
         errorMessage = '비밀번호가 너무 약합니다. 더 강한 비밀번호를 사용해주세요.';
+      } else if (error?.message) {
+        errorMessage = error.message;
+      }
+      
+      setError(errorMessage);
+    } finally {
+      setIsAuthenticating(false);
+    }
+  };
+
+  const handleGoogleAuth = async () => {
+    setIsAuthenticating(true);
+    setError(null);
+
+    try {
+      await signInWithGoogle();
+      // Google 로그인 성공 시 메인 화면으로 이동
+      router.replace('/(tabs)');
+    } catch (error: any) {
+      console.error('Google auth error:', error);
+      let errorMessage = 'Google 로그인 중 오류가 발생했습니다.';
+      
+      if (error?.message?.includes('cancelled')) {
+        errorMessage = 'Google 로그인이 취소되었습니다.';
       } else if (error?.message) {
         errorMessage = error.message;
       }
@@ -259,6 +283,41 @@ export default function SignUpScreen() {
               </TouchableOpacity>
             </View>
           </View>
+
+          {/* 구분선 */}
+          <View style={styles.divider}>
+            <View
+              style={[styles.dividerLine, { backgroundColor: isDark ? '#404040' : '#E0E0E0' }]}
+            />
+            <Text style={[styles.dividerText, { color: textColor }]}>또는</Text>
+            <View
+              style={[styles.dividerLine, { backgroundColor: isDark ? '#404040' : '#E0E0E0' }]}
+            />
+          </View>
+
+          {/* Google 로그인 */}
+          <TouchableOpacity
+            style={[
+              styles.googleButton,
+              {
+                backgroundColor: isDark ? '#2A2A2A' : '#FFFFFF',
+                borderColor: isDark ? '#404040' : '#E0E0E0',
+              },
+            ]}
+            onPress={handleGoogleAuth}
+            disabled={isAuthenticating}
+          >
+            {isAuthenticating ? (
+              <ActivityIndicator color={textColor} />
+            ) : (
+              <>
+                <Text style={styles.googleIcon}>G</Text>
+                <Text style={[styles.googleButtonText, { color: textColor }]}>
+                  Google로 시작하기
+                </Text>
+              </>
+            )}
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -349,6 +408,38 @@ const styles = StyleSheet.create({
   },
   loginLinkButton: {
     fontSize: 14,
+    fontWeight: '600',
+  },
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 24,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+  },
+  dividerText: {
+    marginHorizontal: 16,
+    fontSize: 14,
+    opacity: 0.6,
+  },
+  googleButton: {
+    height: 50,
+    borderRadius: 12,
+    borderWidth: 1,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 12,
+  },
+  googleIcon: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#4285F4',
+  },
+  googleButtonText: {
+    fontSize: 16,
     fontWeight: '600',
   },
 });
