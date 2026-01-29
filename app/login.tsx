@@ -13,13 +13,18 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Google from 'expo-auth-session/providers/google';
+import * as WebBrowser from 'expo-web-browser';
 import { Onboarding } from '@/components/Onboarding';
 import {
   signInWithEmailAndPassword,
-  signInWithGoogle,
+  signInWithGoogleIdToken,
 } from '@/services/authService';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Colors } from '@/constants/theme';
+
+// WebBrowser 세션 완료 처리
+WebBrowser.maybeCompleteAuthSession();
 
 const ONBOARDING_KEY = '@kokoro:onboarding_completed';
 
@@ -37,6 +42,25 @@ export default function LoginScreen() {
   const backgroundColor = isDark ? Colors.dark.background : Colors.light.background;
   const textColor = isDark ? Colors.dark.text : Colors.light.text;
   const tintColor = isDark ? Colors.dark.tint : Colors.light.tint;
+
+  // Google OAuth 훅 설정
+  const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
+    clientId: process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID,
+  });
+
+  // Google OAuth 응답 처리
+  useEffect(() => {
+    if (response?.type === 'success') {
+      const { id_token } = response.params;
+      handleGoogleIdToken(id_token);
+    } else if (response?.type === 'error') {
+      console.error('Google auth error:', response.error);
+      setError('Google 로그인 중 오류가 발생했습니다.');
+      setIsAuthenticating(false);
+    } else if (response?.type === 'dismiss') {
+      setIsAuthenticating(false);
+    }
+  }, [response]);
 
   // 온보딩 완료 여부 확인
   useEffect(() => {
@@ -103,25 +127,44 @@ export default function LoginScreen() {
     }
   };
 
-  const handleGoogleAuth = async () => {
-    setIsAuthenticating(true);
-    setError(null);
-
+  // Google ID 토큰으로 Firebase 로그인
+  const handleGoogleIdToken = async (idToken: string) => {
     try {
-      await signInWithGoogle();
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/d582f426-9aae-493c-a377-bd84604fb787',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'login.tsx:handleGoogleIdToken',message:'Got ID token from Google',data:{idTokenLength:idToken?.length},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'E'})}).catch(()=>{});
+      // #endregion
+      
+      await signInWithGoogleIdToken(idToken);
       router.replace('/(tabs)');
     } catch (error: any) {
-      console.error('Google auth error:', error);
+      console.error('Firebase auth error:', error);
       let errorMessage = 'Google 로그인 중 오류가 발생했습니다.';
       
-      if (error?.message?.includes('cancelled')) {
-        errorMessage = 'Google 로그인이 취소되었습니다.';
-      } else if (error?.message) {
+      if (error?.message) {
         errorMessage = error.message;
       }
       
       setError(errorMessage);
     } finally {
+      setIsAuthenticating(false);
+    }
+  };
+
+  // Google 로그인 버튼 핸들러
+  const handleGoogleAuth = async () => {
+    setIsAuthenticating(true);
+    setError(null);
+
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/d582f426-9aae-493c-a377-bd84604fb787',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'login.tsx:handleGoogleAuth',message:'Starting Google OAuth with useIdTokenAuthRequest',data:{requestReady:!!request},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'E'})}).catch(()=>{});
+    // #endregion
+
+    try {
+      await promptAsync();
+      // 응답은 useEffect에서 처리됨
+    } catch (error: any) {
+      console.error('Google auth error:', error);
+      setError('Google 로그인을 시작할 수 없습니다.');
       setIsAuthenticating(false);
     }
   };

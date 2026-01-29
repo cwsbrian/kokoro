@@ -104,50 +104,41 @@ export async function signUpWithEmailAndPassword(
 }
 
 /**
- * Google 로그인
+ * Google ID 토큰으로 Firebase 로그인
+ * (Google OAuth는 컴포넌트에서 useIdTokenAuthRequest 훅으로 처리)
  */
-export async function signInWithGoogle(): Promise<User> {
+export async function signInWithGoogleIdToken(idToken: string): Promise<User> {
   try {
     const auth = getAuthInstance();
     
-    // Google OAuth 설정
-    const discovery = {
-      authorizationEndpoint: 'https://accounts.google.com/o/oauth2/v2/auth',
-      tokenEndpoint: 'https://oauth2.googleapis.com/token',
-      revocationEndpoint: 'https://oauth2.googleapis.com/revoke',
-    };
-
-    const request = new AuthSession.AuthRequest({
-      clientId: process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID || '',
-      scopes: ['openid', 'profile', 'email'],
-      responseType: AuthSession.ResponseType.IdToken,
-      redirectUri: AuthSession.makeRedirectUri({
-        scheme: 'kokoro',
-        path: 'auth',
-      }),
-    });
-
-    // OAuth 플로우 시작
-    const result = await request.promptAsync(discovery);
-
-    if (result.type === 'success') {
-      const { id_token } = result.params;
-      
-      if (!id_token) {
-        throw new Error('No ID token received from Google');
-      }
-
-      // Firebase에 Google 인증 정보로 로그인
-      const credential = GoogleAuthProvider.credential(id_token);
-      const userCredential = await signInWithCredential(auth, credential);
-      return userCredential.user;
-    } else {
-      throw new Error('Google sign in was cancelled or failed');
-    }
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/d582f426-9aae-493c-a377-bd84604fb787',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'authService.ts:signInWithGoogleIdToken',message:'Firebase login with Google ID token',data:{idTokenLength:idToken?.length},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'E'})}).catch(()=>{});
+    // #endregion
+    
+    const credential = GoogleAuthProvider.credential(idToken);
+    const userCredential = await signInWithCredential(auth, credential);
+    
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/d582f426-9aae-493c-a377-bd84604fb787',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'authService.ts:firebaseLoginSuccess',message:'Firebase login success',data:{userId:userCredential.user.uid},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'E'})}).catch(()=>{});
+    // #endregion
+    
+    return userCredential.user;
   } catch (error: any) {
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/d582f426-9aae-493c-a377-bd84604fb787',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'authService.ts:firebaseLoginError',message:'Firebase login error',data:{errorMessage:error?.message,errorCode:error?.code},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'E'})}).catch(()=>{});
+    // #endregion
+    
     console.error('Google sign in error:', error);
     throw error;
   }
+}
+
+/**
+ * @deprecated Use signInWithGoogleIdToken with useIdTokenAuthRequest hook instead
+ * Google 로그인 (레거시 - 컴포넌트에서 훅 사용 권장)
+ */
+export async function signInWithGoogle(): Promise<User> {
+  throw new Error('signInWithGoogle is deprecated. Use useIdTokenAuthRequest hook in component and call signInWithGoogleIdToken with the id_token.');
 }
 
 /**
